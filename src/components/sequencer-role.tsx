@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
+import { Moon, Sun } from 'lucide-react';
 
 // Dynamically import Joyride with SSR disabled
 const Joyride = dynamic(() => import('react-joyride'), { ssr: false });
@@ -21,7 +22,6 @@ interface Transaction {
   sandwichPairId?: string;
 }
 
-// **FIX 1: Add proper TypeScript interfaces instead of using 'any'**
 interface ProfitBreakdownItem {
   txId: string;
   profit: number;
@@ -123,12 +123,9 @@ function SandwichAttackComponent() {
   const [draggedTx, setDraggedTx] = useState<string | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [showResults, setShowResults] = useState(false);
-  // **FIX 2: Replace 'any' with proper type**
   const [profitResults, setProfitResults] = useState<ProfitResults | null>(null);
   const [censoredCount, setCensoredCount] = useState(0);
   const [reorderedCount, setReorderedCount] = useState(0);
-  // **FIX 3: Remove unused 'originalOrder' state**
-  // const [originalOrder, setOriginalOrder] = useState<Transaction[]>([]);
   
   // Form states for custom transaction
   const [newTxSymbol, setNewTxSymbol] = useState("ETH");
@@ -137,6 +134,9 @@ function SandwichAttackComponent() {
   const [newTxType, setNewTxType] = useState<'BUY' | 'SELL'>('BUY');
   const [showAddForm, setShowAddForm] = useState(false);
 
+  // Theme state - dark mode as default
+  const [isDarkMode, setIsDarkMode] = useState(true);
+
   // Tour state
   const [runTour, setRunTour] = useState(false);
   const [tourKey, setTourKey] = useState(0);
@@ -144,7 +144,30 @@ function SandwichAttackComponent() {
   const tokenSymbols = ["ETH", "BTC", "SOL", "AVAX", "MATIC"];
   const baseMarketPrices = { ETH: 3200, BTC: 67000, SOL: 85, AVAX: 40, MATIC: 1.2 };
 
-  // **FIX 4: Tour steps with fixed unescaped entities**
+  // Load theme preference from localStorage on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('sandwich-theme');
+    if (savedTheme) {
+      setIsDarkMode(savedTheme === 'dark');
+    }
+  }, []);
+
+  // Save theme preference and apply to document
+  useEffect(() => {
+    localStorage.setItem('sandwich-theme', isDarkMode ? 'dark' : 'light');
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
+  // Theme toggle function
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+  };
+
+  // Tour steps with theme toggle added
   const tourSteps = [
     {
       target: '.tour-welcome',
@@ -157,6 +180,20 @@ function SandwichAttackComponent() {
       ),
       placement: 'center' as const,
       disableBeacon: true,
+    },
+    {
+      target: '.tour-theme-toggle',
+      content: (
+        <div>
+          <h3 className="text-lg font-bold mb-2">Theme Toggle 🌙☀️</h3>
+          <p>Switch between dark and light mode for comfortable viewing during MEV simulation.</p>
+          <div className="mt-2 space-y-1 text-sm">
+            <p>🌙 <strong>Dark Mode:</strong> Easy on the eyes for extended trading</p>
+            <p>☀️ <strong>Light Mode:</strong> Classic bright interface</p>
+            <p>💾 <strong>Persistent:</strong> Your preference is saved</p>
+          </div>
+        </div>
+      ),
     },
     {
       target: '.tour-random-concept',
@@ -209,7 +246,7 @@ function SandwichAttackComponent() {
       content: (
         <div>
           <h3 className="text-lg font-bold mb-2">Quick Sandwich Attack! 🥪</h3>
-          <p><strong>One-click MEV:</strong> Click &ldquo;Quick Sandwich&rdquo; on any BUY transaction to automatically:</p>
+          <p><strong>One-click MEV:</strong> Click &quot;Quick Sandwich&quot; on any BUY transaction to automatically:</p>
           <ul className="text-sm mt-2 space-y-1">
             <li>1. 🟢 Insert BUY order <strong>before</strong> victim (lower price)</li>
             <li>2. 🎯 Victim&apos;s transaction executes (pushes price up)</li>
@@ -228,7 +265,7 @@ function SandwichAttackComponent() {
           <div className="mt-2 space-y-1 text-sm">
             <p>🔵 <strong>Blue numbers:</strong> Execution order position</p>
             <p>🌸 <strong>Pink highlight:</strong> Your inserted transactions</p>
-            <p>🟣 <strong>Purple &ldquo;PAIRED&rdquo;:</strong> Sandwich attack pairs</p>
+            <p>🟣 <strong>Purple &quot;PAIRED&quot;:</strong> Sandwich attack pairs</p>
           </div>
           <p className="mt-2 text-sm text-blue-200">Drag transactions up/down to reorder them!</p>
         </div>
@@ -315,7 +352,7 @@ function SandwichAttackComponent() {
     },
   ];
 
-  // **FIX 5: Tour callback handler with proper type**
+  // Tour callback handler with proper type
   const handleTourCallback = (data: TourCallbackData) => {
     const { status } = data;
     const finishedStatuses = ["finished", "skipped"];
@@ -333,18 +370,16 @@ function SandwichAttackComponent() {
     }, 100);
   };
 
-  // **FIX 6: Initialize without originalOrder reference**
+  // Initialize without originalOrder reference
   useEffect(() => {
     const randomTxs = generateRandomTransactions();
     setTransactions(randomTxs);
-    // Removed: setOriginalOrder(randomTxs);
   }, []);
 
-  // **FIX 7: Generate new random transactions without originalOrder**
+  // Generate new random transactions without originalOrder
   const generateNewRandomOrder = () => {
     const randomTxs = generateRandomTransactions();
     setTransactions(randomTxs);
-    // Removed: setOriginalOrder(randomTxs);
     setCensoredCount(0);
     setReorderedCount(0);
     setShowResults(false);
@@ -428,7 +463,7 @@ function SandwichAttackComponent() {
     setShowAddForm(false);
   };
 
-  // **FIX 8: Quick sandwich attack helper with fixed pairId usage**
+  // Quick sandwich attack helper with fixed pairId usage
   const handleQuickSandwich = (targetTxIndex: number) => {
     const targetTx = transactions[targetTxIndex];
     if (!targetTx || targetTx.type !== 'BUY') return;
@@ -469,7 +504,7 @@ function SandwichAttackComponent() {
     setTransactions(newTransactions);
   };
 
-  // **FIX 9: Calculate sandwich attack profits with proper return type**
+  // Calculate sandwich attack profits with proper return type
   const calculateProfit = (): ProfitResults => {
     let totalProfit = 0;
     const executedTxs = [...transactions];
@@ -564,7 +599,9 @@ function SandwichAttackComponent() {
   };
 
   return (
-    <div className="min-h-screen bg-white p-6">
+    <div className={`min-h-screen p-6 transition-colors duration-300 ${
+      isDarkMode ? 'bg-gray-900' : 'bg-white'
+    }`}>
       {/* Tour Component */}
       <Joyride
         key={tourKey}
@@ -577,10 +614,10 @@ function SandwichAttackComponent() {
         styles={{
           options: {
             arrowColor: "#ec4899",
-            backgroundColor: "#ec4899",
+            backgroundColor: isDarkMode ? "#1f2937" : "#ec4899",
             overlayColor: "rgba(236, 72, 153, 0.3)",
             primaryColor: "#ec4899",
-            textColor: "#fff",
+            textColor: isDarkMode ? "#e5e7eb" : "#fff",
             width: 360,
             zIndex: 1000,
           },
@@ -599,19 +636,50 @@ function SandwichAttackComponent() {
       />
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-200 rounded-lg p-4 mb-6 tour-welcome">
+      <div className={`border rounded-lg p-4 mb-6 tour-welcome transition-colors duration-300 ${
+        isDarkMode 
+          ? 'bg-gradient-to-r from-pink-900/20 to-rose-900/20 border-pink-700' 
+          : 'bg-gradient-to-r from-pink-50 to-rose-50 border-pink-200'
+      }`}>
         <div className="flex justify-between items-center">
           <div className="tour-random-concept">
-            <h1 className="text-2xl font-bold text-gray-900">🥪 Sandwich Attack Simulation</h1>
-            <p className="text-gray-600">Random Orders Generated Each Time</p>
-            <div className="mt-2 text-sm text-pink-600">
+            <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              🥪 Sandwich Attack Simulation
+            </h1>
+            <p className={isDarkMode ? 'text-gray-300' : 'text-gray-600'}>
+              Random Orders Generated Each Time
+            </p>
+            <div className="mt-2 text-sm text-pink-400">
               <span className="font-semibold">Execution Order:</span> Top to Bottom (Transaction 1 → 2 → 3...)
             </div>
-            <div className="mt-1 text-xs text-gray-500">
+            <div className={`mt-1 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
               🎲 <strong>New Feature:</strong> Completely random transactions with varying tokens, amounts, and prices
             </div>
           </div>
           <div className="flex gap-2">
+            {/* Theme Toggle Button */}
+            <Button
+              onClick={toggleTheme}
+              variant="ghost"
+              size="sm"
+              className={`tour-theme-toggle p-2 rounded-lg transition-colors ${
+                isDarkMode 
+                  ? 'hover:bg-gray-700 text-gray-300 hover:text-white' 
+                  : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <motion.div
+                initial={false}
+                animate={{ rotate: isDarkMode ? 0 : 180 }}
+                transition={{ duration: 0.3 }}
+              >
+                {isDarkMode ? (
+                  <Sun className="w-5 h-5" />
+                ) : (
+                  <Moon className="w-5 h-5" />
+                )}
+              </motion.div>
+            </Button>
             <Button
               onClick={startTour}
               className="tour-help-button bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105"
@@ -621,7 +689,9 @@ function SandwichAttackComponent() {
             <Button onClick={() => setShowAddForm(!showAddForm)} className="bg-pink-600 hover:bg-pink-700">
               {showAddForm ? "Cancel" : "➕ Add Transaction"}
             </Button>
-            <Button onClick={handleReset} variant="outline" className="border-pink-300 text-pink-600">
+            <Button onClick={handleReset} variant="outline" className={`border-pink-300 text-pink-600 ${
+              isDarkMode ? 'hover:bg-pink-900/20' : ''
+            }`}>
               🔄 Reset
             </Button>
           </div>
@@ -632,18 +702,36 @@ function SandwichAttackComponent() {
         {/* Custom Transaction Form */}
         {showAddForm && (
           <div className="lg:col-span-1">
-            <Card className="border-pink-200 tour-add-transaction">
-              <CardHeader className="bg-pink-50 border-b border-pink-200">
-                <CardTitle className="text-lg text-gray-900">🎯 Add Transaction</CardTitle>
-                <p className="text-sm text-gray-600">Create buy/sell orders manually</p>
+            <Card className={`tour-add-transaction transition-colors duration-300 ${
+              isDarkMode ? 'border-pink-700 bg-gray-800' : 'border-pink-200'
+            }`}>
+              <CardHeader className={`border-b transition-colors duration-300 ${
+                isDarkMode 
+                  ? 'bg-pink-900/20 border-pink-700' 
+                  : 'bg-pink-50 border-pink-200'
+              }`}>
+                <CardTitle className={`text-lg ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  🎯 Add Transaction
+                </CardTitle>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                  Create buy/sell orders manually
+                </p>
               </CardHeader>
               <CardContent className="p-4 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Token</label>
+                  <label className={`block text-sm font-medium mb-1 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Token
+                  </label>
                   <select
                     value={newTxSymbol}
                     onChange={(e) => setNewTxSymbol(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-pink-500"
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-pink-500 transition-colors duration-300 ${
+                      isDarkMode 
+                        ? 'bg-gray-700 border-gray-600 text-white' 
+                        : 'border-gray-300'
+                    }`}
                   >
                     {tokenSymbols.map(symbol => (
                       <option key={symbol} value={symbol}>{symbol}</option>
@@ -673,26 +761,42 @@ function SandwichAttackComponent() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                  <label className={`block text-sm font-medium mb-1 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Amount
+                  </label>
                   <input
                     type="number"
                     step="0.01"
                     value={newTxAmount}
                     onChange={(e) => setNewTxAmount(e.target.value)}
                     placeholder="0.00"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-pink-500"
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-pink-500 transition-colors duration-300 ${
+                      isDarkMode 
+                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                        : 'border-gray-300'
+                    }`}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Price per Token</label>
+                  <label className={`block text-sm font-medium mb-1 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Price per Token
+                  </label>
                   <input
                     type="number"
                     step="0.01"
                     value={newTxPrice}
                     onChange={(e) => setNewTxPrice(e.target.value)}
                     placeholder={`${baseMarketPrices[newTxSymbol as keyof typeof baseMarketPrices]}`}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-pink-500"
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-pink-500 transition-colors duration-300 ${
+                      isDarkMode 
+                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                        : 'border-gray-300'
+                    }`}
                   />
                 </div>
 
@@ -706,12 +810,22 @@ function SandwichAttackComponent() {
 
         {/* Transaction Queue */}
         <div className={showAddForm ? "lg:col-span-2" : "lg:col-span-3"}>
-          <Card className="border-pink-200 tour-transaction-queue">
-            <CardHeader className="bg-pink-50 border-b border-pink-200">
+          <Card className={`tour-transaction-queue transition-colors duration-300 ${
+            isDarkMode ? 'border-pink-700 bg-gray-800' : 'border-pink-200'
+          }`}>
+            <CardHeader className={`border-b transition-colors duration-300 ${
+              isDarkMode 
+                ? 'bg-pink-900/20 border-pink-700' 
+                : 'bg-pink-50 border-pink-200'
+            }`}>
               <div className="flex justify-between items-center">
                 <div>
-                  <CardTitle className="text-lg text-gray-900">📋 Random Transaction Queue ({transactions.length})</CardTitle>
-                  <p className="text-sm text-gray-600">Each reset generates completely new random orders</p>
+                  <CardTitle className={`text-lg ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    📋 Random Transaction Queue ({transactions.length})
+                  </CardTitle>
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                    Each reset generates completely new random orders
+                  </p>
                 </div>
                 <Button 
                   onClick={generateNewRandomOrder} 
@@ -723,16 +837,24 @@ function SandwichAttackComponent() {
               </div>
             </CardHeader>
             <CardContent className="p-4">
-              <div className="space-y-3 min-h-96 p-4 rounded-lg border-2 border-dashed border-gray-200">
+              <div className={`space-y-3 min-h-96 p-4 rounded-lg border-2 border-dashed transition-colors duration-300 ${
+                isDarkMode ? 'border-gray-600' : 'border-gray-200'
+              }`}>
                 {/* Execution Order Indicator */}
-                <div className="flex items-center gap-2 mb-4 p-2 bg-blue-50 border border-blue-200 rounded tour-execution-order">
-                  <span className="text-blue-600 font-semibold">Execution Order:</span>
+                <div className={`flex items-center gap-2 mb-4 p-2 border rounded tour-execution-order transition-colors duration-300 ${
+                  isDarkMode 
+                    ? 'bg-blue-900/20 border-blue-700' 
+                    : 'bg-blue-50 border-blue-200'
+                }`}>
+                  <span className={`font-semibold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                    Execution Order:
+                  </span>
                   <div className="flex items-center gap-1">
-                    <span className="text-sm text-blue-600">1st</span>
+                    <span className={`text-sm ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>1st</span>
                     <span className="text-blue-400">→</span>
-                    <span className="text-sm text-blue-600">2nd</span>
+                    <span className={`text-sm ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>2nd</span>
                     <span className="text-blue-400">→</span>
-                    <span className="text-sm text-blue-600">3rd...</span>
+                    <span className={`text-sm ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>3rd...</span>
                   </div>
                 </div>
 
@@ -744,14 +866,18 @@ function SandwichAttackComponent() {
                     onDragOver={(e) => handleDragOver(e, index)}
                     onDragLeave={handleDragLeave}
                     onDrop={(e) => handleDrop(e, index)}
-                    className={`bg-white border rounded-lg p-4 shadow-sm transition-all cursor-move select-none ${
+                    className={`border rounded-lg p-4 shadow-sm transition-all cursor-move select-none ${
                       tx.isSequencerTx 
-                        ? 'border-pink-400 bg-pink-50 ring-2 ring-pink-200' 
+                        ? 'border-pink-400 ring-2 ring-pink-200 bg-pink-50' 
                         : draggedTx === tx.id 
                           ? 'border-pink-300 shadow-lg opacity-50' 
                           : dragOverIndex === index
-                            ? 'border-pink-400 bg-pink-50'
-                            : 'border-gray-200 hover:border-pink-300 hover:shadow-md'
+                            ? isDarkMode 
+                              ? 'border-pink-400 bg-pink-900/20'
+                              : 'border-pink-400 bg-pink-50'
+                            : isDarkMode
+                              ? 'border-gray-600 bg-gray-700 hover:border-pink-400 hover:shadow-md'
+                              : 'border-gray-200 bg-white hover:border-pink-300 hover:shadow-md'
                     }`}
                   >
                     <div className="flex justify-between items-start">
@@ -760,7 +886,9 @@ function SandwichAttackComponent() {
                           <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded text-xs font-bold">
                             #{index + 1}
                           </span>
-                          <span className="font-bold text-gray-800">{tx.symbol}</span>
+                          <span className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                            {tx.symbol}
+                          </span>
                           <span className={`px-2 py-1 rounded text-xs font-semibold ${
                             tx.type === 'BUY' 
                               ? 'bg-green-100 text-green-700' 
@@ -778,16 +906,20 @@ function SandwichAttackComponent() {
                               PAIRED
                             </span>
                           )}
-                          <span className="text-xs text-gray-400">⋮⋮</span>
+                          <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                            ⋮⋮
+                          </span>
                         </div>
-                        <div className="text-sm text-gray-600 space-y-1">
+                        <div className={`text-sm space-y-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                           <div>Amount: <span className="font-semibold">{tx.amount} {tx.symbol}</span></div>
                           <div>Price: <span className="font-semibold">${tx.price.toLocaleString()}</span></div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-xs text-gray-500 mb-1">{tx.txId}</div>
-                        <div className="text-sm font-bold text-gray-800">
+                        <div className={`text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          {tx.txId}
+                        </div>
+                        <div className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
                           ${(tx.amount * tx.price).toLocaleString()}
                         </div>
                         {!tx.isSequencerTx && tx.type === 'BUY' && (
@@ -804,7 +936,7 @@ function SandwichAttackComponent() {
                   </div>
                 ))}
                 {transactions.length === 0 && (
-                  <div className="text-center py-12 text-gray-400">
+                  <div className={`text-center py-12 ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>
                     <div className="text-4xl mb-2">📭</div>
                     <p>No transactions generated</p>
                     <Button onClick={generateNewRandomOrder} className="mt-2">
@@ -830,21 +962,41 @@ function SandwichAttackComponent() {
 
         {/* Statistics Panel */}
         <div className="lg:col-span-1">
-          <Card className="border-pink-200 mb-6 tour-statistics">
-            <CardHeader className="bg-pink-50 border-b border-pink-200">
-              <CardTitle className="text-lg text-gray-900">📊 Statistics</CardTitle>
+          <Card className={`mb-6 tour-statistics transition-colors duration-300 ${
+            isDarkMode ? 'border-pink-700 bg-gray-800' : 'border-pink-200'
+          }`}>
+            <CardHeader className={`border-b transition-colors duration-300 ${
+              isDarkMode 
+                ? 'bg-pink-900/20 border-pink-700' 
+                : 'bg-pink-50 border-pink-200'
+            }`}>
+              <CardTitle className={`text-lg ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                📊 Statistics
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-4 space-y-4">
               <div className="grid grid-cols-1 gap-3">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className={`border rounded-lg p-3 transition-colors duration-300 ${
+                  isDarkMode 
+                    ? 'bg-blue-900/20 border-blue-700' 
+                    : 'bg-blue-50 border-blue-200'
+                }`}>
                   <div className="text-2xl font-bold text-blue-600">{reorderedCount}</div>
                   <div className="text-sm text-blue-600">Reorders Made</div>
                 </div>
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <div className={`border rounded-lg p-3 transition-colors duration-300 ${
+                  isDarkMode 
+                    ? 'bg-red-900/20 border-red-700' 
+                    : 'bg-red-50 border-red-200'
+                }`}>
                   <div className="text-2xl font-bold text-red-600">{censoredCount}</div>
                   <div className="text-sm text-red-600">Txs Censored</div>
                 </div>
-                <div className="bg-pink-50 border border-pink-200 rounded-lg p-3">
+                <div className={`border rounded-lg p-3 transition-colors duration-300 ${
+                  isDarkMode 
+                    ? 'bg-pink-900/20 border-pink-700' 
+                    : 'bg-pink-50 border-pink-200'
+                }`}>
                   <div className="text-2xl font-bold text-pink-600">
                     {transactions.filter(tx => tx.isSequencerTx).length}
                   </div>
@@ -853,9 +1005,19 @@ function SandwichAttackComponent() {
               </div>
 
               {/* Random Generation Info */}
-              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-                <div className="text-xs font-semibold text-purple-800 mb-2">🎲 Random Generation:</div>
-                <div className="text-xs text-purple-700 space-y-1">
+              <div className={`border rounded-lg p-3 transition-colors duration-300 ${
+                isDarkMode 
+                  ? 'bg-purple-900/20 border-purple-700' 
+                  : 'bg-purple-50 border-purple-200'
+              }`}>
+                <div className={`text-xs font-semibold mb-2 ${
+                  isDarkMode ? 'text-purple-400' : 'text-purple-800'
+                }`}>
+                  🎲 Random Generation:
+                </div>
+                <div className={`text-xs space-y-1 ${
+                  isDarkMode ? 'text-purple-300' : 'text-purple-700'
+                }`}>
                   <div>• 5-7 random transactions</div>
                   <div>• Random tokens & types</div>
                   <div>• Realistic price ranges</div>
@@ -864,9 +1026,19 @@ function SandwichAttackComponent() {
               </div>
 
               {/* Sandwich Strategy Guide */}
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                <div className="text-xs font-semibold text-orange-800 mb-2">🥪 Sandwich Strategy:</div>
-                <div className="text-xs text-orange-700 space-y-1">
+              <div className={`border rounded-lg p-3 transition-colors duration-300 ${
+                isDarkMode 
+                  ? 'bg-orange-900/20 border-orange-700' 
+                  : 'bg-orange-50 border-orange-200'
+              }`}>
+                <div className={`text-xs font-semibold mb-2 ${
+                  isDarkMode ? 'text-orange-400' : 'text-orange-800'
+                }`}>
+                  🥪 Sandwich Strategy:
+                </div>
+                <div className={`text-xs space-y-1 ${
+                  isDarkMode ? 'text-orange-300' : 'text-orange-700'
+                }`}>
                   <div>1. Add BUY before victim</div>
                   <div>2. Victim&apos;s transaction executes</div>
                   <div>3. Add SELL after victim</div>
@@ -877,16 +1049,28 @@ function SandwichAttackComponent() {
           </Card>
 
           {/* Trash Bin */}
-          <Card className="border-red-200 tour-censorship">
-            <CardHeader className="bg-red-50 border-b border-red-200">
-              <CardTitle className="text-lg text-gray-900">🗑️ Censorship Zone</CardTitle>
+          <Card className={`tour-censorship transition-colors duration-300 ${
+            isDarkMode ? 'border-red-700 bg-gray-800' : 'border-red-200'
+          }`}>
+            <CardHeader className={`border-b transition-colors duration-300 ${
+              isDarkMode 
+                ? 'bg-red-900/20 border-red-700' 
+                : 'bg-red-50 border-red-200'
+            }`}>
+              <CardTitle className={`text-lg ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                🗑️ Censorship Zone
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-4">
               <div
                 onDragOver={handleTrashDragOver}
                 onDrop={handleTrashDrop}
                 className={`min-h-32 border-2 border-dashed rounded-lg flex items-center justify-center p-4 transition-colors ${
-                  draggedTx ? 'border-red-400 bg-red-100' : 'border-red-300 bg-red-50 hover:bg-red-100'
+                  draggedTx 
+                    ? 'border-red-400 bg-red-100' 
+                    : isDarkMode
+                      ? 'border-red-600 bg-red-900/20 hover:bg-red-900/30'
+                      : 'border-red-300 bg-red-50 hover:bg-red-100'
                 }`}
               >
                 <div className="text-center text-red-600">
@@ -900,7 +1084,7 @@ function SandwichAttackComponent() {
         </div>
       </div>
 
-      {/* **FIX 10: Results Modal with proper typing** */}
+      {/* Results Modal */}
       <AnimatePresence>
         {showResults && profitResults && (
           <motion.div
@@ -913,7 +1097,9 @@ function SandwichAttackComponent() {
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
-              className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-y-auto"
+              className={`rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-y-auto transition-colors duration-300 ${
+                isDarkMode ? 'bg-gray-800' : 'bg-white'
+              }`}
             >
               <div className="bg-gradient-to-r from-pink-500 to-rose-500 text-white p-6 rounded-t-lg">
                 <h2 className="text-2xl font-bold">🥪 Sandwich Attack Results</h2>
@@ -922,13 +1108,21 @@ function SandwichAttackComponent() {
               
               <div className="p-6 space-y-6">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className={`border rounded-lg p-4 transition-colors duration-300 ${
+                    isDarkMode 
+                      ? 'bg-green-900/20 border-green-700' 
+                      : 'bg-green-50 border-green-200'
+                  }`}>
                     <div className="text-2xl font-bold text-green-600">
                       ${profitResults.grossProfit.toFixed(2)}
                     </div>
                     <div className="text-sm text-green-600">Total Profit</div>
                   </div>
-                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <div className={`border rounded-lg p-4 transition-colors duration-300 ${
+                    isDarkMode 
+                      ? 'bg-purple-900/20 border-purple-700' 
+                      : 'bg-purple-50 border-purple-200'
+                  }`}>
                     <div className="text-2xl font-bold text-purple-600">
                       {profitResults.sandwichPairs}
                     </div>
@@ -936,10 +1130,14 @@ function SandwichAttackComponent() {
                   </div>
                 </div>
 
-                <div className={`border rounded-lg p-4 ${
+                <div className={`border rounded-lg p-4 transition-colors duration-300 ${
                   profitResults.netProfit >= 0 
-                    ? 'bg-green-50 border-green-200' 
-                    : 'bg-red-50 border-red-200'
+                    ? isDarkMode 
+                      ? 'bg-green-900/20 border-green-700' 
+                      : 'bg-green-50 border-green-200'
+                    : isDarkMode 
+                      ? 'bg-red-900/20 border-red-700' 
+                      : 'bg-red-50 border-red-200'
                 }`}>
                   <div className={`text-3xl font-bold ${
                     profitResults.netProfit >= 0 ? 'text-green-600' : 'text-red-600'
@@ -951,7 +1149,7 @@ function SandwichAttackComponent() {
                   }`}>
                     Net Profit
                   </div>
-                  <div className="text-sm text-gray-600 mt-1">
+                  <div className={`text-sm mt-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                     {profitResults.netProfit > 0 
                       ? "🎉 Successful sandwich attacks on random orders!" 
                       : profitResults.netProfit < 0
@@ -960,25 +1158,37 @@ function SandwichAttackComponent() {
                   </div>
                 </div>
 
-                {/* **FIX 11: Detailed Profit Breakdown with proper typing** */}
+                {/* Detailed Profit Breakdown */}
                 {profitResults.profitBreakdown && profitResults.profitBreakdown.length > 0 && (
                   <div className="space-y-3">
-                    <h3 className="text-lg font-semibold text-gray-800">📋 Detailed Breakdown</h3>
+                    <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                      📋 Detailed Breakdown
+                    </h3>
                     <div className="space-y-2">
                       {profitResults.profitBreakdown.map((item: ProfitBreakdownItem, index: number) => (
-                        <div key={index} className={`p-4 rounded-lg border ${
+                        <div key={index} className={`p-4 rounded-lg border transition-colors duration-300 ${
                           item.profit > 0 
-                            ? 'bg-green-50 border-green-200' 
+                            ? isDarkMode 
+                              ? 'bg-green-900/20 border-green-700' 
+                              : 'bg-green-50 border-green-200'
                             : item.profit < 0 
-                              ? 'bg-red-50 border-red-200'
-                              : 'bg-gray-50 border-gray-200'
+                              ? isDarkMode 
+                                ? 'bg-red-900/20 border-red-700' 
+                                : 'bg-red-50 border-red-200'
+                              : isDarkMode 
+                                ? 'bg-gray-700 border-gray-600' 
+                                : 'bg-gray-50 border-gray-200'
                         }`}>
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
-                              <div className="font-semibold text-sm text-gray-800">{item.txId}</div>
-                              <div className="text-xs text-gray-600 mt-1">{item.strategy}</div>
+                              <div className={`font-semibold text-sm ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                                {item.txId}
+                              </div>
+                              <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                {item.strategy}
+                              </div>
                               {item.buyPrice && item.sellPrice && (
-                                <div className="text-xs text-gray-500 mt-1">
+                                <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                   Buy: ${item.buyPrice} → Sell: ${item.sellPrice} × {item.amount} tokens
                                 </div>
                               )}
@@ -996,12 +1206,18 @@ function SandwichAttackComponent() {
                   </div>
                 )}
 
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className={`border rounded-lg p-4 transition-colors duration-300 ${
+                  isDarkMode 
+                    ? 'bg-yellow-900/20 border-yellow-700' 
+                    : 'bg-yellow-50 border-yellow-200'
+                }`}>
                   <div className="flex items-start space-x-2">
                     <div className="text-yellow-600 text-lg">🎲</div>
                     <div>
-                      <div className="font-semibold text-yellow-800">Random Order Analysis</div>
-                      <div className="text-sm text-yellow-700 mt-1">
+                      <div className={`font-semibold ${isDarkMode ? 'text-yellow-400' : 'text-yellow-800'}`}>
+                        Random Order Analysis
+                      </div>
+                      <div className={`text-sm mt-1 ${isDarkMode ? 'text-yellow-300' : 'text-yellow-700'}`}>
                         Analysis of {profitResults.sequencerTxCount} sandwich transactions on randomly generated orders. 
                         Each reset creates new opportunities with different tokens, amounts, and prices!
                       </div>
